@@ -7,10 +7,9 @@ const storage=multer.diskStorage({
     },
     //what will be my file name of the stored file
     filename:function(req,file,cb){
-        cb(null,file.filename)
+        cb(null,file.originalname)
     }
 })
 export const upload=multer({
     storage,
-
 })

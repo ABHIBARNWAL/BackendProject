@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jsonwebtoken from "jsonwebtoken";
-const jwt=jsonwebtoken
+const jwt=jsonwebtoken;
 const userSchema=new mongoose.Schema({
     username:{
         type:String,
@@ -24,17 +24,16 @@ const userSchema=new mongoose.Schema({
         trim:true
     },
     avatar:{
-        type:String, //CloudnaryService
-        required:true,
+        type:String,
+        required:true //CloudnaryService
     },
     coverimage:{
-        type:String,
-        required:true
+        type:String
     },
     watchHistory:[
         {
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Video'
+            type:mongoose.Schema.Types.ObjectId,
+            ref:'Video' 
         }
     ],
     password:{
@@ -48,7 +47,7 @@ const userSchema=new mongoose.Schema({
 
 userSchema.pre("save",async function(next){
     if(!this.isModified("password"))return next();
-    this.password=await bcrypt.hash(this.password)
+    this.password=await bcrypt.hash(this.password,10)
     next()
 })
 userSchema.methods.isPasswordCorrect=async function(password){
