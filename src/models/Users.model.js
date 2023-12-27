@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import jsonwebtoken from "jsonwebtoken";
-const jwt=jsonwebtoken;
+import jwt from "jsonwebtoken";
 const userSchema=new mongoose.Schema({
     username:{
         type:String,
@@ -57,7 +56,7 @@ userSchema.methods.generateAccessToken=async function()
 {
     const accessToken=jwt.sign(
         {
-            id:this.id,
+            _id:this._id,
             username:this.username,
             email:this.email,
             fullname:this.fullname
@@ -67,19 +66,19 @@ userSchema.methods.generateAccessToken=async function()
             expiresIn:process.env.ACCESS_TOKEN_EXPIRY
         }
     )
-    return accessToken
+    return accessToken;
 }
 userSchema.methods.generateRefreshToken=async function()
 {
     const refreshToken=jwt.sign(
         {
-            id:this.id,
+            _id:this._id,
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
             expiresIn:process.env.REFRESH_TOKEN_EXPIRY
         }
     )
-    return refreshToken
+    return refreshToken;
 }
-export const User=mongoose.model('User',userSchema)
+export const User=mongoose.model('User',userSchema);
