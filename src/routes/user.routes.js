@@ -1,5 +1,5 @@
 import {Router} from "express";
-import { loginUser, logoutUser, refreshAccessToken, registerUser } from "../controllers/user.controller.js";
+import { changePassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, registerUser, updateAvatar, updateCoverImage, updateProfile } from "../controllers/user.controller.js";
 import {upload} from "../middleware/multer.middleware.js"
 import { verifyJWT } from "../middleware/auth.middleware.js";
 const router=Router();
@@ -18,7 +18,8 @@ router.route("/register").post(
             }
         ]
     )
-    ,registerUser)
+    ,registerUser
+)
 // route for login of user 
 router.route("/login").post(loginUser)
 
@@ -27,8 +28,38 @@ router.route("/logout").post(
     verifyJWT,
     logoutUser
 )
-
+//to regenarate the access token after expiry
 router.route("/refresh-token").post(
     refreshAccessToken
+)
+
+//to change the password of the user
+router.route("/change-password").patch(
+    verifyJWT,
+    changePassword,
+    logoutUser
+)
+
+//to show the details of current user
+router.route("/current-user").get(
+    verifyJWT,
+    getCurrentUser
+)
+
+router.route("/update-profile").post(
+    verifyJWT,
+    updateProfile
+)
+
+router.route("/update-avatar").patch(
+    verifyJWT,
+    upload.single("avatar"),//same as field name on frontend),
+    updateAvatar
+)
+
+router.route("/cover-image").patch(
+    verifyJWT,
+    upload.single("coverimage"),
+    updateCoverImage
 )
 export default router;

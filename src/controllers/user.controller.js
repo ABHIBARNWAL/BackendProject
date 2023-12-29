@@ -1,7 +1,7 @@
 import {asyncHandler} from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/Users.model.js";
-import { uploadFile } from "../utils/cloudinary.js";
+import { deleteFile, uploadFile } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -151,8 +151,9 @@ const logoutUser=asyncHandler( async(req,res)=>{
    // clear the cookie
    // take refreshtoken from user
    // return res
+   // console.log(req.user._id);
    User.findByIdAndUpdate(
-      req.user_id,
+      req.user._id,
       {
          $set:{
             refreshToken:undefined
@@ -220,9 +221,146 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
    }
 })
 
+const changePassword=asyncHandler(async(req,res,next)=>{
+   const{oldPassword, newPassword,confirmPassword}=req.body;
+   if(newPassword != confirmPassword)
+   {
+      throw new ApiError(500,"confirm Password not matched with new Password");
+   }
+   const user=await User.findById(req.user?._id);
+   const flag=await user.isPasswordCorrect(oldPassword);
+   console.log("flag: ",flag);
+   if(!flag)
+   {
+      throw new ApiError(501, "Unauthorized Access or Invalid Old Password");
+   }
+   user.password=newPassword;
+   await user.save({validateBeforeSave: false});
+   next();
+   return res
+   .status(200)
+   .json(
+      new ApiResponse(
+         200,
+         {},
+         "Password updated Successfully"
+      )
+   )
+})
+
+const getCurrentUser=asyncHandler(async(req,res)=>{
+   return res
+   .status(200)
+   .json(new ApiResponse(
+      200,
+      req.user,
+      "Current User"
+   ))
+})
+
+const updateProfile=asyncHandler(async (req,res)=>{
+   const {fullname,email}=req.body;
+   // console.log(fullname,email);
+   if(!fullname && !email) 
+   {
+      throw new ApiError(501,"All fields are required");
+   }
+   const user=await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+         $set:{
+            fullname:fullname,
+            email:email
+         }
+      },
+      {
+         new:true
+      }
+   ).select("-password")
+   return res
+   .status(201)
+   .json(
+      new ApiResponse(
+         201,
+         user,
+         "Profile updated Successfully"
+      )
+   )
+});
+
+const updateAvatar=asyncHandler(async(req,res)=>{
+   const avatarPath=req.file?.path;
+   if(!avatarPath)
+   {
+      throw new ApiError(501, "Avatar file is required");
+   }
+   const avatar=await uploadFile(avatarPath);
+   if(!avatar)
+   {
+      throw new ApiError(401, "Unable to upload Avatar on Cloudinary")
+   }
+   const user=await User.findById(req.user?._id).select("-password -refreshToken");
+   if(!user)
+   {
+      throw new ApiError(401,"unauthorized access");
+   }
+   const avatarURL=user.avatar;
+   // console.log(avatarURL);
+   await deleteFile(avatarURL);
+   user.avatar=avatar.url;
+   await user.save({validateBeforeSave: false});
+
+   return res
+   .status(200)
+   .json(
+      new ApiResponse(
+         200,
+         user,
+         "Avatar updated Successfully"
+      )
+   )
+})
+
+const updateCoverImage=asyncHandler(async(req,res)=>{
+   const coverImagefile=req.file?.path;
+
+   if(!coverImagefile)
+   {
+      throw new ApiError(501, "Cover Image file is required");
+   }
+   const coverImage=await uploadFile(coverImagefile);
+   if(!coverImage)
+   {
+      throw new ApiError(401, "Unable to upload Cover Image on Cloudinary")
+   }
+   const user=await User.findById(req.user?._id).select("-password -refreshToken");
+   if(!user)
+   {
+      throw new ApiError(401,"unauthorized access");
+   }
+   await deleteFile(user.coverimage);
+   user.coverimage=coverImage.url;
+   await user.save({validateBeforeSave: false});
+
+   return res
+   .status(200)
+   .json(
+      new ApiResponse(
+         200,
+         user,
+         "Cover Image updated Successfully"
+      )
+   )
+})
+
 export {
    loginUser,
    logoutUser,
    registerUser,
+   changePassword,
+   getCurrentUser,
+   updateProfile,
+   updateAvatar,
+   updateCoverImage,
    refreshAccessToken
 }

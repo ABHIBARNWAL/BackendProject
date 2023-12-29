@@ -1,5 +1,9 @@
 import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs';
+import { extractPublicId } from 'cloudinary-build-url'
+
+
+
           
 cloudinary.config({ 
   cloud_name: "dngr0r7nc", 
@@ -15,8 +19,8 @@ const uploadFile= async (localPath)=>{
         const res= await cloudinary.uploader.upload(localPath,{
             resource_type:"auto"
         });
-        console.log("res: ",res);
-        // fs.unlinkSync(localPath)
+        // console.log("res: ",res);
+        fs.unlinkSync(localPath)
         return res;
         
     } catch (error) {
@@ -26,4 +30,21 @@ const uploadFile= async (localPath)=>{
         return null;
     }
 }
-export {uploadFile}
+const deleteFile=async (URL)=>{
+    try {
+        // If filepath is emptyt string
+        if(!URL)return null;
+        //Upload file on cloudinary
+        const publicId = extractPublicId(URL);
+        // console.log(publicId);
+        const res=await cloudinary.uploader.destroy(publicId);
+        // console.log("res: ",res);
+        return res;
+        
+    } catch (error) {
+        // remove the locally saved temporary file as the upload
+        // console.log("File not deleted Successfully")
+        return null;
+    }
+}
+export {uploadFile,deleteFile}
