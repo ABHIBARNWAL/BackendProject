@@ -4,6 +4,7 @@ import { User } from "../models/Users.model.js";
 import { deleteFile, uploadFile } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshToken=async(user_id)=>{
    try {
@@ -54,10 +55,10 @@ const registerUser = asyncHandler( async(req,res)=>{
    }
    const avatarPath=req.files?.avatar[0]?.path;
    let coverImageLocalPath = req.files?.coverimage[0]?.path;
-      if(!avatarPath)
-      {
-         throw new ApiError(400, "Avatar is required")
-      }
+   if(!avatarPath)
+   {
+      throw new ApiError(400, "Avatar is required")
+   }
     const avatar = await uploadFile(avatarPath)
     const coverimage=await uploadFile(coverImageLocalPath)
     if(!avatar)
@@ -353,6 +354,144 @@ const updateCoverImage=asyncHandler(async(req,res)=>{
    )
 })
 
+const getUserProfile=asyncHandler(async(req,res)=>{
+   const {username}=req.params;
+   if(!username?.trim())
+   {
+      throw new ApiError(401,"Username is missing");
+   }
+   // Pipelines to fetch user details
+   const userProfile=await User.aggregate(
+      [
+         //match to select respective username
+         {
+            $match:{ username:username }
+         },
+         // join to select the number of subscriber of that channel
+         {
+            $lookup:{
+               from:"subscriptions",
+               localField:"_id",
+               foreignFIeld:"channel",
+               as:"subscribers"
+
+            }
+         },
+         // join to select the number of channel subscribe by the user
+         {
+            $lookup:{
+               from:"subscriptions",
+               localField:"_id",
+               foreignFIeld:"subscriber",
+               as:"subscribedTo"
+
+            }
+         },
+         // add fields of subscribers ans who has subscribed to the channel
+         {
+            $addFields:{
+               subscriberCount:{
+                  $size:"$subscibers"
+               },
+               subscribedTocount:{
+                  $size:"$subscribedTo"
+               },
+               isSubscribed:{
+                  $cond:{
+                     if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                     then:true,
+                     else:false
+                  }
+               }
+            }
+         },
+         // project the user details
+         {
+            $project:{
+               fullname:1,
+               username:1,
+               subscriberCount:1,
+               subscribedTocount:1,
+               isSubscribed:1,
+               avatar:1,
+               coverimage:1,
+               email:1,
+            }
+         }
+      ]
+   )
+
+   if(!userProfile?.length)
+   {
+      throw new ApiError(401,"No Such Channel exist");
+   }
+
+   console.log("UserProfile: ",userProfile);
+
+   return res
+   .status(200)
+   .json(new ApiResponse(
+      201,
+      userProfile[0],
+      "Channel Details Fetched Successfully"
+   ))
+
+})
+
+const getWatchHistory=asyncHandler(async(req,res)=>{
+   const user=User.aggregate([
+      {
+         $match:{
+            _id: new mongoose.Types.ObjectId(req.user._id)
+         }
+      },
+      {
+         $lookup:{
+            from:"videos",
+            foreignField:"_id",
+            localField:"watchHistory",
+            as:"watchhistory",
+            pipeline:[
+               {
+                  $lookup:{
+                     from:"users",
+                     localField:"owner",
+                     foreignField:"_id",
+                     as:"owner",
+                     pipeline:[
+                        {
+                           $project:{
+                              fullname:1,
+                              username:1,
+                              avatar:1
+                           }
+                        }
+                     ]
+                  }
+               },
+               {
+                  $addFields:
+                  {
+                     owner:
+                     {
+                        $first:"$owner"
+                     }
+                  }
+               }
+            ]
+         }
+      },
+   
+   ])
+   return res
+   .status(201)
+   .json(new ApiResponse(
+      200,
+      user[0].watchHistory,
+      "Watch History Successfully fetched"
+   ))
+})
+
 export {
    loginUser,
    logoutUser,
@@ -361,6 +500,8 @@ export {
    getCurrentUser,
    updateProfile,
    updateAvatar,
+   getUserProfile,
    updateCoverImage,
+   getWatchHistory,
    refreshAccessToken
 }
