@@ -9,13 +9,20 @@ import { Schema, model }  from "mongoose";
         description:{
             type:String
         },
-        videos:{
-            type:Schema.Types.ObjectId,
-            ref:"Video"
-        },
+        videos:[
+            {
+                type:Schema.Types.ObjectId,
+                ref:"Video"
+            }
+        ],
         owner:{
             type:Schema.Types.ObjectId,
             ref:"User"
+        },
+        playlistType:{
+            type:String,
+            enum:['Public','Private'],
+            default:'Private'
         }
 
     },
