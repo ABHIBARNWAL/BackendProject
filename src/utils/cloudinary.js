@@ -25,7 +25,7 @@ const uploadFile= async (localPath)=>{
         
     } catch (error) {
         // remove the locally saved temporary file as the upload
-        // console.log("FIle not Uploaded Successfully")
+        console.log("FIle not Uploaded Successfully")
         fs.unlinkSync(localPath)
         return null;
     }

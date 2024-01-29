@@ -230,7 +230,7 @@ const changePassword=asyncHandler(async(req,res,next)=>{
    }
    const user=await User.findById(req.user?._id);
    const flag=await user.isPasswordCorrect(oldPassword);
-   console.log("flag: ",flag);
+   // console.log("flag: ",flag);
    if(!flag)
    {
       throw new ApiError(501, "Unauthorized Access or Invalid Old Password");
@@ -439,7 +439,7 @@ const getUserProfile=asyncHandler(async(req,res)=>{
 })
 
 const getWatchHistory=asyncHandler(async(req,res)=>{
-   const user=User.aggregate([
+   const user=await User.aggregate([
       {
          $match:{
             _id: new mongoose.Types.ObjectId(req.user._id)
@@ -491,6 +491,8 @@ const getWatchHistory=asyncHandler(async(req,res)=>{
       "Watch History Successfully fetched"
    ))
 })
+
+
 
 export {
    loginUser,

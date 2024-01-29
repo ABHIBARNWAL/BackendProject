@@ -18,7 +18,7 @@ const videoSchema=new mongoose.Schema({
         type:String,
         required:true
     },
-    descriptin:{
+    description:{
         type:String,
         required:true
     },
@@ -28,12 +28,10 @@ const videoSchema=new mongoose.Schema({
     },
     views:{
         type:Number,
-        required:true,
         default:0
     },
     isPublished:{
         type:Boolean,
-        required:true,
         default:false
     }
 },{timestamps:true})

@@ -1,11 +1,11 @@
 import {Router} from "express";
-import { changePassword, getCurrentUser, getUserProfile, getWatchHistory, loginUser, logoutUser, refreshAccessToken, registerUser, updateAvatar, updateCoverImage, updateProfile } from "../controllers/user.controller.js";
+import {changePassword, getCurrentUser, getUserProfile, getWatchHistory, loginUser, logoutUser, refreshAccessToken, registerUser, updateAvatar, updateCoverImage, updateProfile } from "../controllers/user.controller.js";
 import {upload} from "../middleware/multer.middleware.js"
 import { verifyJWT } from "../middleware/auth.middleware.js";
-const router=Router();
+const userRouter=Router();
 
 // route for new registration of user
-router.route("/register").post(
+userRouter.route("/register").post(
     upload.fields(
         [
             {
@@ -21,56 +21,57 @@ router.route("/register").post(
     ,registerUser
 )
 // route for login of user 
-router.route("/login").post(loginUser)
+userRouter.route("/login").post(loginUser)
 
 // route for logout the user
-router.route("/logout").post(
+userRouter.route("/logout").post(
     verifyJWT,
     logoutUser
 )
 //to regenarate the access token after expiry
-router.route("/refresh-token").post(
+userRouter.route("/refresh-token").post(
     refreshAccessToken
 )
 
 //to change the password of the user
-router.route("/change-password").patch(
+userRouter.route("/change-password").patch(
     verifyJWT,
     changePassword,
     logoutUser
 )
 
 //to show the details of current user
-router.route("/current-user").get(
+userRouter.route("/current-user").get(
     verifyJWT,
     getCurrentUser
 )
 
-router.route("/update-profile").post(
+userRouter.route("/update-profile").post(
     verifyJWT,
     updateProfile
 )
 
-router.route("/update-avatar").patch(
+userRouter.route("/update-avatar").patch(
     verifyJWT,
     upload.single("avatar"),//same as field name on frontend),
     updateAvatar
 )
 
-router.route("/cover-image").patch(
+userRouter.route("/cover-image").patch(
     verifyJWT,
     upload.single("coverimage"),
     updateCoverImage
 )
 
-router.route("/channel").get(
+userRouter.route("/c/:username").get(
     verifyJWT,
     getUserProfile
 )
 
-router.route("/watch-history").get(
+userRouter.route("/watch-history").get(
     verifyJWT,
     getWatchHistory
 )
 
-export default router;
+
+export default userRouter;
